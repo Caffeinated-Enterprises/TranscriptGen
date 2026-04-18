@@ -1,0 +1,32 @@
+services:
+  yt-downloader:
+    build: .
+    image: yt-downloader:latest
+    volumes:
+      - ./downloads:/app/downloads
+    environment:
+      OUTPUT_DIR: /app/downloads
+
+  whisper-transcriber:
+    build:
+      context: .
+      dockerfile: Dockerfile.whisper
+    image: whisper-transcriber:latest
+    volumes:
+      - ./downloads:/app/downloads
+      - ./transcripts:/app/transcripts
+    environment:
+      DOWNLOADS_DIR: /app/downloads
+      TRANSCRIPTS_DIR: /app/transcripts
+      WHISPER_MODEL: large
+      # Leave unset: single GPU (avoids CUDA unknown errors with 2 parallel Whisper threads). Set to 1 to use 2 GPUs.
+      WHISPER_MULTI_GPU: "1"
+      # Comma-separated top-level folders under downloads/ (default in script: group_3,group_4). Empty = all folders.
+      TRANSCRIBE_GROUPS: "group_1,group2,group_3,group_4"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
